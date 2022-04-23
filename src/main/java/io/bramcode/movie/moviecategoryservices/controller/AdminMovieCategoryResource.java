@@ -4,50 +4,73 @@ package io.bramcode.movie.moviecategoryservices.controller;
 import io.bramcode.movie.moviecategoryservices.model.entity.Category;
 import io.bramcode.movie.moviecategoryservices.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import javax.validation.Valid;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/movie/v1/category")
-public class MovieCategoryResource {
+@RequestMapping("/admin/movie/v1/category")
+public class AdminMovieCategoryResource {
 
     //Autowire (consumer) 
     //telling spring somebody has bean somewhere of type resttemplate inject me that thing
-    @Autowired
-    private RestTemplate restTemplate;
+    //@Autowired
+    //private RestTemplate restTemplate;
 
     @Autowired
     private CategoryService categoryService;
 
     @PostMapping("/save")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
     public Category createCategory(@Valid @RequestBody Category category) {
-        return categoryService.saveCategory(category);
+         return category;
+        //return categoryService.saveCategory(category);
     }
 
     @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_ADMIN_TRAINEE')")
     public List<Category> getAllCategory() {
-        return categoryService.retreiveAll();
+        Category category = new Category();
+        category.setCategoryId(1l);
+        category.setCategoryName("Hollywood");
+        return Arrays.asList(category);
+        //return categoryService.retreiveAll();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('category:read')")
     public Category getCategory(@PathVariable(value = "id") Long categoryId) {
-        return categoryService.retreiveById(categoryId);
+        Category category = new Category();
+        category.setCategoryId(categoryId);
+
+        return category;
+        //return categoryService.retreiveById(categoryId);
     }
 
     @PutMapping("/update/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_ADMIN_TRAINEE')")
     public Category updateCategory(@PathVariable(value = "id") long categoryId,
                                    @Valid @RequestBody Category categoryDetails) {
+        System.out.println("Update id : " + categoryId);
 
-        return categoryService.updateCategory(categoryId, categoryDetails);
+        return categoryDetails;
+        //return categoryService.updateCategory(categoryId, categoryDetails);
     }
 
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
     public Map<String, Boolean> deleteCategory(@PathVariable(value = "id") long categoryId) {
-        return categoryService.deleteCategory(categoryId);
+        Map<String, Boolean> tempMap = new HashMap<>();
+        tempMap.put("1", true);
+
+        return tempMap;
+        //System.out.println("Delete id : " + categoryId);
+        //return categoryService.deleteCategory(categoryId);
     }
 
 //    @RequestMapping("/{userId}")

@@ -45,6 +45,9 @@ server:
   error:
     include-message: always
     include-binding-errors: always
+  servlet:
+    session:
+      timeout: 60s
 
 resilience4j:
   circuitbreaker:
