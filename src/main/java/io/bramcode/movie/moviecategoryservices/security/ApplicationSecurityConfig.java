@@ -4,17 +4,16 @@ import io.bramcode.movie.moviecategoryservices.auth.ApplicationUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-import static io.bramcode.movie.moviecategoryservices.security.ApplicationUserRole.*;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableWebSecurity
@@ -22,59 +21,65 @@ import static io.bramcode.movie.moviecategoryservices.security.ApplicationUserRo
 public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final PasswordEncoder passwordEncoder;
-    //private final ApplicationUserService applicationUserService;
+    private final ApplicationUserService applicationUserService;
 
     @Autowired
-    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder){
+    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService) {
         this.passwordEncoder = passwordEncoder;
+        this.applicationUserService = applicationUserService;
     }
 
-
-    //Basic Auth
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-     //the order of antMatcher is really matter
-     //if use annotations @PreAuthorize then it needs to comment out of the antMatchers and enable global method security with flag true
-     //if authentication failed when using csrf then it must generate new token
         http
                 .csrf().disable()
                 .authorizeRequests() // wants authorize request
-                .antMatchers("/","index","/css/*","/js/*").permitAll() // whitelist some urls
+                .antMatchers("/", "index", "/css/*", "/js/*").permitAll() // whitelist some urls
+                //.antMatchers("/admin/**").hasRole(ADMIN.name())
+                //========using has authority instead of hasRole :
+//                //.antMatchers(HttpMethod.POST,"/admin/movie/**").hasAuthority(MOVIE_WRITE.getPermission())
+//                //.antMatchers(HttpMethod.PUT,"/admin/movie/**").hasAuthority(MOVIE_WRITE.getPermission())
+//                //.antMatchers(HttpMethod.DELETE,"/admin/movie/**").hasAuthority(MOVIE_WRITE.getPermission())
+//                //.antMatchers(HttpMethod.GET,"/admin/movie/**").hasAnyRole(ADMIN.name(), ADMINTRAINEE.name())
+//                //.antMatchers(HttpMethod.GET,"/admin/movie/**").hasAuthority(MOVIE_READ.getPermission())
                 .anyRequest() //any request
                 .authenticated() //must be authenticated
                 .and()
-                .httpBasic(); // and use mechanism basic authentication
+                .formLogin()
+                .loginPage("/login").permitAll()
+                .defaultSuccessUrl("/category?message=Hello there !!", true)
+                .and()
+                .sessionManagement()
+                .invalidSessionUrl("/login")
+                .and()
+                .rememberMe()//default two weeks
+                .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
+                .key("somethingveryseecure")
+                .and()
+                .logout()
+                .logoutUrl("/logout")
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET")) // using this if disable csrf
+                .clearAuthentication(true)
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID", "remember-me")
+                .logoutSuccessUrl("/login")
+                .and()
+                .httpBasic();
     }
 
-    /// Using InMemoryUserDetailsManager with manual hardcode config
+    //Using DAO Authentification Provider
     @Override
-    @Bean //instance
-    protected UserDetailsService userDetailsService() {
-        UserDetails bramarAdmin = User.builder()
-                .username("Bramar")
-                .password(passwordEncoder.encode("password"))
-                //.roles(ADMIN.name()) // ROLE_ADMIN -> this how spring security understand
-                .authorities(ADMIN.getGrantedAuthorities()) //Authentication based on permission
-                .build();
-
-        UserDetails traineeAdmin = User.builder()
-                .username("Trainee")
-                .password(passwordEncoder.encode("trainee"))
-                //.roles(ADMINTRAINEE.name()) // ROLE_ADMIN_TRAINEE -> this how spring security understand
-                .authorities(ADMIN_TRAINEE.getGrantedAuthorities())
-                .build();
-
-        UserDetails userA = User.builder()
-                .username("UserA")
-                .password(passwordEncoder.encode("userA123"))
-               // .roles(EMPLOYEE.name()) // ROLE_EMPLOYEE -> this how spring security understand
-                .authorities(STAFF.getGrantedAuthorities())
-                .build();
-
-        return new InMemoryUserDetailsManager(
-                bramarAdmin,
-                traineeAdmin,
-                userA
-        );
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(daoAuthenticationProvider());
     }
+
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setUserDetailsService(applicationUserService);
+
+        return provider;
+    }
+
 }
