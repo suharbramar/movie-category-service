@@ -1,7 +1,6 @@
 package io.bramcode.movie.moviecategoryservices.auth;
 
 import io.bramcode.movie.moviecategoryservices.repository.UserPermissionRepository;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -17,7 +16,6 @@ public class UserPermissionDaoService implements UserPermissionDao {
         this.userPermission = userPermission;
         this.userPermissionRepository = userPermissionRepository;
     }
-
 
     @Override
     public Set<UserPermission> selectActiveUserPermission() {

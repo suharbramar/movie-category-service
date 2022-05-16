@@ -1,14 +1,13 @@
 package io.bramcode.movie.moviecategoryservices.auth;
 
 import io.bramcode.movie.moviecategoryservices.repository.UserRoleRepository;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-public class UserRoleDaoService implements UserRoleDao{
+public class UserRoleDaoService implements UserRoleDao {
 
     private final UserRoleRepository userRoleRepository;
 

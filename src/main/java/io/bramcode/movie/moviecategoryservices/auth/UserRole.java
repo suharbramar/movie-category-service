@@ -1,12 +1,16 @@
 package io.bramcode.movie.moviecategoryservices.auth;
 
+import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity(name = "UserRole")
 @Table(name = "userrole")
-public class UserRole {
+public class UserRole implements Serializable {
 
     @Id
     @SequenceGenerator(
@@ -24,27 +28,29 @@ public class UserRole {
     )
     private Long roleId;
 
+    @OneToMany(targetEntity = ApplicationUser.class, mappedBy = "userRole", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ApplicationUser> applicationUsers = new ArrayList<>();
+
+    @NaturalId
     @Column(name = "role_name", length = 50, nullable = false)
     private String roleName;
+
+    @Column(name = "role_description", length = 100, nullable = true)
+    private String roleDescription;
 
     @Type(type = "org.hibernate.type.NumericBooleanType")
     @Column(name = "isRole_Enabled", nullable = false)
     private boolean isRoleEnabled;
 
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "permission_name")
-    private UserPermission permissionSet;
-
-
     public UserRole() {
     }
 
-    public UserRole(Long roleId, String roleName, boolean isRoleEnabled, UserPermission permissionSet) {
+    public UserRole(Long roleId, List<ApplicationUser> applicationUsers, String roleName, String roleDescription, boolean isRoleEnabled) {
         this.roleId = roleId;
+        this.applicationUsers = applicationUsers;
         this.roleName = roleName;
+        this.roleDescription = roleDescription;
         this.isRoleEnabled = isRoleEnabled;
-        this.permissionSet = permissionSet;
     }
 
     public Long getRoleId() {
@@ -55,12 +61,28 @@ public class UserRole {
         this.roleId = roleId;
     }
 
+    public List<ApplicationUser> getApplicationUsers() {
+        return applicationUsers;
+    }
+
+    public void setApplicationUsers(List<ApplicationUser> applicationUsers) {
+        this.applicationUsers = applicationUsers;
+    }
+
     public String getRoleName() {
         return roleName;
     }
 
     public void setRoleName(String roleName) {
         this.roleName = roleName;
+    }
+
+    public String getRoleDescription() {
+        return roleDescription;
+    }
+
+    public void setRoleDescription(String roleDescription) {
+        this.roleDescription = roleDescription;
     }
 
     public boolean isRoleEnabled() {
@@ -70,13 +92,4 @@ public class UserRole {
     public void setRoleEnabled(boolean roleEnabled) {
         isRoleEnabled = roleEnabled;
     }
-
-    public UserPermission getPermissionSet() {
-        return permissionSet;
-    }
-
-    public void setPermissionSet(UserPermission permissionSet) {
-        this.permissionSet = permissionSet;
-    }
-
 }

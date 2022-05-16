@@ -1,5 +1,6 @@
 package io.bramcode.movie.moviecategoryservices.auth;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.Type;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,6 +32,7 @@ public class ApplicationUser implements UserDetails {
     @Transient
     private Set<SimpleGrantedAuthority> grantedAuthorityList = new HashSet<>();
 
+    @JsonIgnore
     @Column(name = "password", nullable = false)
     private String password;
 
@@ -53,8 +55,8 @@ public class ApplicationUser implements UserDetails {
     @Column(name = "is_enabled", nullable = false)
     private boolean isEnabled;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_name", referencedColumnName = "role_name")
     private UserRole userRole;
 
     public UserRole getUserRole() {

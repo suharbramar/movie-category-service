@@ -25,10 +25,19 @@ public class ApplicationUserRole {
     }
 
     public Set<SimpleGrantedAuthority> getGrantedAuthorities(String roleName) {
-        Set<SimpleGrantedAuthority> permissions = getPermissions().stream()
-                .map(permission -> new SimpleGrantedAuthority(permission.getPermissionName()))
-                .collect(Collectors.toSet());
-        permissions.add(new SimpleGrantedAuthority("ROLE_" + roleName));
-        return permissions;
+        Boolean isRoleNameActive = userRoleDaoService.selectActiveUserRole().stream()
+                .filter(userRole -> userRole.getRoleName().equalsIgnoreCase(roleName)).findFirst().isPresent();
+
+        if(isRoleNameActive){
+            Set<SimpleGrantedAuthority> permissions = getPermissions().stream()
+                    .filter(userPermission -> userPermission.getUserRole().getRoleName().equalsIgnoreCase(roleName))
+                    .map(permission -> new SimpleGrantedAuthority(permission.getPermissionName()))
+                    .collect(Collectors.toSet());
+            permissions.add(new SimpleGrantedAuthority("ROLE_" + roleName));
+            return permissions;
+        }
+
+        return null;
+
     }
 }
