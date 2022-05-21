@@ -21,7 +21,6 @@ public class JwtUsernameAndPasswordFilter extends UsernamePasswordAuthentication
 
     private final AuthenticationManager authenticationManager;
 
-
     public JwtUsernameAndPasswordFilter(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
     }
@@ -59,6 +58,6 @@ public class JwtUsernameAndPasswordFilter extends UsernamePasswordAuthentication
                 .signWith(Keys.hmacShaKeyFor(key.getBytes()))
                 .compact();
 
-        response.addHeader("Authorization", "Bearer " +token);
+        response.addHeader("Authorization", "Bearer " + token);
     }
 }

@@ -1,6 +1,8 @@
 package io.bramcode.movie.moviecategoryservices.security;
 
 import io.bramcode.movie.moviecategoryservices.auth.ApplicationUserService;
+import io.bramcode.movie.moviecategoryservices.jwt.JwtTokenVerifier;
+import io.bramcode.movie.moviecategoryservices.jwt.JwtUsernameAndPasswordFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,10 +12,13 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.util.concurrent.TimeUnit;
+
+import static io.bramcode.movie.moviecategoryservices.security.ApplicationUserRole.ADMIN;
 
 @Configuration
 @EnableWebSecurity
@@ -33,38 +38,15 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .csrf().disable()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) //won't store the server into database
+                .and()
+                .addFilter(new JwtUsernameAndPasswordFilter(authenticationManager())) //authenticationManager come from WebSecurirtConfigAdapter
+                .addFilterAfter(new JwtTokenVerifier(), JwtUsernameAndPasswordFilter.class)
                 .authorizeRequests() // wants authorize request
                 .antMatchers("/", "index", "/css/*", "/js/*").permitAll() // whitelist some urls
-                //.antMatchers("/admin/**").hasRole(ADMIN.name())
-                //========using has authority instead of hasRole :
-//                //.antMatchers(HttpMethod.POST,"/admin/movie/**").hasAuthority(MOVIE_WRITE.getPermission())
-//                //.antMatchers(HttpMethod.PUT,"/admin/movie/**").hasAuthority(MOVIE_WRITE.getPermission())
-//                //.antMatchers(HttpMethod.DELETE,"/admin/movie/**").hasAuthority(MOVIE_WRITE.getPermission())
-//                //.antMatchers(HttpMethod.GET,"/admin/movie/**").hasAnyRole(ADMIN.name(), ADMINTRAINEE.name())
-//                //.antMatchers(HttpMethod.GET,"/admin/movie/**").hasAuthority(MOVIE_READ.getPermission())
+                .antMatchers("/admin/**").hasRole(ADMIN.name())
                 .anyRequest() //any request
-                .authenticated() //must be authenticated
-                .and()
-                .formLogin()
-                .loginPage("/login").permitAll()
-                .defaultSuccessUrl("/category?message=Hello there !!", true)
-                .and()
-                .sessionManagement()
-                .invalidSessionUrl("/login")
-                .and()
-                .rememberMe()//default two weeks
-                .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
-                .key("somethingveryseecure")
-                .and()
-                .logout()
-                .logoutUrl("/logout")
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET")) // using this if disable csrf
-                .clearAuthentication(true)
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID", "remember-me")
-                .logoutSuccessUrl("/login")
-                .and()
-                .httpBasic();
+                .authenticated(); //must be authenticated
     }
 
     //Using DAO Authentification Provider
