@@ -15,7 +15,7 @@ public class MovieCategoryServicesApplication {
 
 	//singleton
 	//rest template map to this one instance
-	//bean as producer, anybody autowired this method then it will inject
+	//bean as producer (managed by spring container), anybody autowired this method then it will inject
 	//the return type must be same with return type specifed in autowired
 	@Bean
 	@LoadBalanced

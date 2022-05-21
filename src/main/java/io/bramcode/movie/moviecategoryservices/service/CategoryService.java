@@ -14,10 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 public class CategoryService {
@@ -27,19 +25,27 @@ public class CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    //Array of collection list
+    //data test
+    private static final List<Category> myCategory = Arrays.asList(
+            new Category(1l, "kdrama", true,
+                    new Timestamp(System.currentTimeMillis()), "SYSTEM",
+                    new Timestamp(System.currentTimeMillis()), "SYSTEM")
+    );
+
     public CategoryService(){}
 
-    @CacheEvict(value = "categories", allEntries = true)
+    //@CacheEvict(value = "categories", allEntries = true)
     public Category saveCategory(Category category){
         return categoryRepository.save(category);
     }
 
-    @Cacheable(value = "categories")
+    //@Cacheable(value = "categories")
     public List<Category> retreiveAll(){
         return categoryRepository.findAll(Sort.by(Sort.Direction.ASC,"categoryId"));
     }
 
-    @Cacheable(value = "categories", key = "#categoryId")
+    //@Cacheable(value = "categories", key = "#categoryId")
     public Category retreiveById(Long categoryId) {
         logger.info("Inside category response..");
         Optional<Category> dataCategory = categoryRepository.findById(categoryId);
@@ -68,7 +74,7 @@ public class CategoryService {
 
     };
 
-    @CachePut(value = "categories", key = "#categoryId")
+    //@CachePut(value = "categories", key = "#categoryId")
     public Category updateCategory(Long categoryId, Category category){
         Optional<Category> optCategory = categoryRepository.findById(categoryId);
         Category updCategory;
@@ -87,7 +93,7 @@ public class CategoryService {
          return category;
     }
 
-    @CacheEvict(value = "categories", allEntries = true)
+    //@CacheEvict(value = "categories", allEntries = true)
     public Map<String, Boolean> deleteCategory(Long categoryId){
         Optional<Category> optCategory = categoryRepository.findById(categoryId);
 
