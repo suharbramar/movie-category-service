@@ -1,8 +1,11 @@
 package io.bramcode.movie.moviecategoryservices.security;
 
 import io.bramcode.movie.moviecategoryservices.auth.ApplicationUserService;
+import io.bramcode.movie.moviecategoryservices.jwt.JwtConfig;
+import io.bramcode.movie.moviecategoryservices.jwt.JwtSecretKey;
 import io.bramcode.movie.moviecategoryservices.jwt.JwtTokenVerifier;
 import io.bramcode.movie.moviecategoryservices.jwt.JwtUsernameAndPasswordFilter;
+import io.bramcode.movie.moviecategoryservices.jwt.JwtSecretKey.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,9 +17,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
-import java.util.concurrent.TimeUnit;
 
 import static io.bramcode.movie.moviecategoryservices.security.ApplicationUserRole.ADMIN;
 
@@ -27,11 +27,16 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final PasswordEncoder passwordEncoder;
     private final ApplicationUserService applicationUserService;
+    private final JwtSecretKey jwtSecretKey;
+    private final JwtConfig jwtConfig;
 
-    @Autowired
-    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService) {
+   // @Autowired
+    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService,
+                                     JwtSecretKey jwtSecretKey, JwtConfig jwtConfig) {
         this.passwordEncoder = passwordEncoder;
         this.applicationUserService = applicationUserService;
+        this.jwtSecretKey = jwtSecretKey;
+        this.jwtConfig = jwtConfig;
     }
 
     @Override
@@ -40,11 +45,11 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) //won't store the server into database
                 .and()
-                .addFilter(new JwtUsernameAndPasswordFilter(authenticationManager())) //authenticationManager come from WebSecurirtConfigAdapter
-                .addFilterAfter(new JwtTokenVerifier(), JwtUsernameAndPasswordFilter.class)
+                .addFilter(new JwtUsernameAndPasswordFilter(authenticationManager(), jwtConfig, jwtSecretKey.secretKey())) //authenticationManager come from WebSecurirtConfigAdapter
+                .addFilterAfter(new JwtTokenVerifier(jwtSecretKey.secretKey(), jwtConfig), JwtUsernameAndPasswordFilter.class)
                 .authorizeRequests() // wants authorize request
                 .antMatchers("/", "index", "/css/*", "/js/*").permitAll() // whitelist some urls
-                .antMatchers("/admin/**").hasRole(ADMIN.name())
+             //   .antMatchers("/admin/**").hasRole(ADMIN.name())
                 .anyRequest() //any request
                 .authenticated(); //must be authenticated
     }
